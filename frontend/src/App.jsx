@@ -21,9 +21,9 @@ import AuthLayout from "./components/Layout/AuthLayout";
 // Page Components
 import Dashboard from "./pages/Dashboard";
 import StrategyEngine from "./pages/StrategyEngine";
-import Backtesting from "./pages/Backtesting";
+import BacktestingPage from "./pages/BacktestingPage";
 import Alerts from "./pages/Alerts";
-import Portfolio from "./pages/Portfolio";
+import PortfolioPage from "./pages/PortfolioPage";
 import Settings from "./pages/Settings";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
@@ -129,7 +129,7 @@ function App() {
           element={
             <ProtectedRoute>
               <Layout>
-                <Backtesting />
+                <BacktestingPage />
               </Layout>
             </ProtectedRoute>
           }
@@ -151,7 +151,7 @@ function App() {
           element={
             <ProtectedRoute>
               <Layout>
-                <Portfolio />
+                <PortfolioPage />
               </Layout>
             </ProtectedRoute>
           }
