@@ -43,13 +43,13 @@ import Register from "./pages/Auth/Register";
 //   return !isAuthenticated ? children : <Navigate to="/dashboard" replace />
 // }
 
-// Temporary bypass components for direct access
+// Bypass components for demo - backend connected
 const ProtectedRoute = ({ children }) => {
-  return children; // Direct access without authentication check
+  return children; // Direct access for demo
 };
 
 const PublicRoute = ({ children }) => {
-  return children; // Allow access to auth pages without redirect
+  return children; // Allow access to auth pages
 };
 
 function App() {

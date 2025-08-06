@@ -10,12 +10,18 @@ import {
   BarChart3,
   Clock,
 } from "lucide-react";
-import { fetchMarketData, setCurrentSymbol } from "../store/slices/marketSlice";
+import {
+  fetchMarketData,
+  setCurrentSymbol,
+  updateRealTimePrice,
+} from "../store/slices/marketSlice";
 import { fetchStrategies } from "../store/slices/strategySlice";
 import PriceChart from "../components/Charts/PriceChart";
 import MetricsCard from "../components/Dashboard/MetricsCard";
 import RecentAlerts from "../components/Dashboard/RecentAlerts";
 import StrategyPerformance from "../components/Dashboard/StrategyPerformance";
+import AIPredictionCard from "../components/Dashboard/AIPredictionCard";
+import RealTimeData from "../components/Dashboard/RealTimeData";
 
 const Dashboard = () => {
   const dispatch = useDispatch();
@@ -36,11 +42,46 @@ const Dashboard = () => {
   const { notifications, activeAlerts } = useSelector((state) => state.alerts);
 
   useEffect(() => {
-    // Fetch initial data
+    // Fetch initial data from backend
     dispatch(
       fetchMarketData({ symbol: currentSymbol, timeframe: selectedTimeframe })
     );
     dispatch(fetchStrategies());
+
+    // Fetch real-time price every 30 seconds
+    const priceInterval = setInterval(() => {
+      fetch(`http://localhost:5000/api/market/price/${currentSymbol}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.price) {
+            // Update real-time price in Redux store
+            dispatch(
+              updateRealTimePrice({
+                price: data.price,
+                change24h: data.change_24h,
+              })
+            );
+          }
+        })
+        .catch((err) => console.log("Price fetch error:", err));
+    }, 30000);
+
+    // Initial price fetch
+    fetch(`http://localhost:5000/api/market/price/${currentSymbol}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.price) {
+          dispatch(
+            updateRealTimePrice({
+              price: data.price,
+              change24h: data.change_24h,
+            })
+          );
+        }
+      })
+      .catch((err) => console.log("Initial price fetch error:", err));
+
+    return () => clearInterval(priceInterval);
   }, [dispatch, currentSymbol, selectedTimeframe]);
 
   const cryptoSymbols = ["BTC", "ETH", "ADA", "SOL", "DOT", "LINK"];
@@ -200,6 +241,12 @@ const Dashboard = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Real-Time Data */}
+          <RealTimeData symbol={currentSymbol} />
+
+          {/* AI Prediction */}
+          <AIPredictionCard symbol={currentSymbol} />
+
           {/* Recent Alerts */}
           <RecentAlerts
             alerts={activeAlerts.slice(0, 5)}

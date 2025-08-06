@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from models import db, OHLCVData, TechnicalIndicators, OnChainMetrics, MarketSentiment
-import talib
+# import talib  # Commented out for now - requires special installation
 
 class MarketDataService:
     def __init__(self):
@@ -157,25 +157,28 @@ class MarketDataService:
                 'volume': item.volume
             } for item in ohlcv_data])
             
-            # Calculate indicators using TA-Lib
-            close_prices = df['close'].values
-            high_prices = df['high'].values
-            low_prices = df['low'].values
-            
+            # Calculate indicators using simple implementations
+            close_prices = df['close']
+
             # Moving Averages
-            sma_20 = talib.SMA(close_prices, timeperiod=20)
-            sma_50 = talib.SMA(close_prices, timeperiod=50)
-            ema_12 = talib.EMA(close_prices, timeperiod=12)
-            ema_26 = talib.EMA(close_prices, timeperiod=26)
-            
-            # RSI
-            rsi = talib.RSI(close_prices, timeperiod=14)
-            
+            sma_20 = close_prices.rolling(window=20).mean()
+            sma_50 = close_prices.rolling(window=50).mean()
+            ema_12 = close_prices.ewm(span=12).mean()
+            ema_26 = close_prices.ewm(span=26).mean()
+
+            # RSI (simplified)
+            rsi = self._calculate_rsi_simple(close_prices, 14)
+
             # MACD
-            macd, macd_signal, macd_hist = talib.MACD(close_prices, fastperiod=12, slowperiod=26, signalperiod=9)
-            
+            macd = ema_12 - ema_26
+            macd_signal = macd.ewm(span=9).mean()
+            macd_hist = macd - macd_signal
+
             # Bollinger Bands
-            bb_upper, bb_middle, bb_lower = talib.BBANDS(close_prices, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
+            bb_middle = close_prices.rolling(window=20).mean()
+            bb_std = close_prices.rolling(window=20).std()
+            bb_upper = bb_middle + (bb_std * 2)
+            bb_lower = bb_middle - (bb_std * 2)
             
             # Store latest indicators
             latest_idx = -1
@@ -195,17 +198,17 @@ class MarketDataService:
                 symbol=symbol.upper(),
                 timestamp=latest_timestamp,
                 timeframe=timeframe,
-                sma_20=float(sma_20[latest_idx]) if not np.isnan(sma_20[latest_idx]) else None,
-                sma_50=float(sma_50[latest_idx]) if not np.isnan(sma_50[latest_idx]) else None,
-                ema_12=float(ema_12[latest_idx]) if not np.isnan(ema_12[latest_idx]) else None,
-                ema_26=float(ema_26[latest_idx]) if not np.isnan(ema_26[latest_idx]) else None,
-                rsi=float(rsi[latest_idx]) if not np.isnan(rsi[latest_idx]) else None,
-                macd=float(macd[latest_idx]) if not np.isnan(macd[latest_idx]) else None,
-                macd_signal=float(macd_signal[latest_idx]) if not np.isnan(macd_signal[latest_idx]) else None,
-                macd_histogram=float(macd_hist[latest_idx]) if not np.isnan(macd_hist[latest_idx]) else None,
-                bb_upper=float(bb_upper[latest_idx]) if not np.isnan(bb_upper[latest_idx]) else None,
-                bb_middle=float(bb_middle[latest_idx]) if not np.isnan(bb_middle[latest_idx]) else None,
-                bb_lower=float(bb_lower[latest_idx]) if not np.isnan(bb_lower[latest_idx]) else None
+                sma_20=float(sma_20.iloc[latest_idx]) if not pd.isna(sma_20.iloc[latest_idx]) else None,
+                sma_50=float(sma_50.iloc[latest_idx]) if not pd.isna(sma_50.iloc[latest_idx]) else None,
+                ema_12=float(ema_12.iloc[latest_idx]) if not pd.isna(ema_12.iloc[latest_idx]) else None,
+                ema_26=float(ema_26.iloc[latest_idx]) if not pd.isna(ema_26.iloc[latest_idx]) else None,
+                rsi=float(rsi.iloc[latest_idx]) if not pd.isna(rsi.iloc[latest_idx]) else None,
+                macd=float(macd.iloc[latest_idx]) if not pd.isna(macd.iloc[latest_idx]) else None,
+                macd_signal=float(macd_signal.iloc[latest_idx]) if not pd.isna(macd_signal.iloc[latest_idx]) else None,
+                macd_histogram=float(macd_hist.iloc[latest_idx]) if not pd.isna(macd_hist.iloc[latest_idx]) else None,
+                bb_upper=float(bb_upper.iloc[latest_idx]) if not pd.isna(bb_upper.iloc[latest_idx]) else None,
+                bb_middle=float(bb_middle.iloc[latest_idx]) if not pd.isna(bb_middle.iloc[latest_idx]) else None,
+                bb_lower=float(bb_lower.iloc[latest_idx]) if not pd.isna(bb_lower.iloc[latest_idx]) else None
             )
             
             db.session.add(indicators)
@@ -273,3 +276,12 @@ class MarketDataService:
         # This would integrate with Fear & Greed Index API, news APIs, etc.
         # For now, return mock data
         return None
+
+    def _calculate_rsi_simple(self, prices, window=14):
+        """Calculate RSI using simple implementation"""
+        delta = prices.diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+        return rsi
