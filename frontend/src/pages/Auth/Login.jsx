@@ -1,96 +1,102 @@
-import React, { useState, useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
-import { loginUser, clearError } from '../../store/slices/authSlice'
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { loginUser, clearError } from "../../store/slices/authSlice";
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  })
-  const [showPassword, setShowPassword] = useState(false)
-  const [validationErrors, setValidationErrors] = useState({})
+    email: "",
+    password: "",
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
 
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
-  const { isLoading, error, isAuthenticated } = useSelector((state) => state.auth)
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { isLoading, error, isAuthenticated } = useSelector(
+    (state) => state.auth
+  );
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard')
+      navigate("/dashboard");
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     // Clear any existing errors when component mounts
-    dispatch(clearError())
-  }, [dispatch])
+    dispatch(clearError());
+  }, [dispatch]);
 
   const validateForm = () => {
-    const errors = {}
-    
+    const errors = {};
+
     if (!formData.email) {
-      errors.email = 'Email is required'
+      errors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Email is invalid'
+      errors.email = "Email is invalid";
     }
-    
+
     if (!formData.password) {
-      errors.password = 'Password is required'
+      errors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters'
+      errors.password = "Password must be at least 6 characters";
     }
-    
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
-  }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
+    const { name, value } = e.target;
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
-    }))
-    
+      [name]: value,
+    }));
+
     // Clear validation error for this field
     if (validationErrors[name]) {
-      setValidationErrors(prev => ({
+      setValidationErrors((prev) => ({
         ...prev,
-        [name]: ''
-      }))
+        [name]: "",
+      }));
     }
-  }
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (!validateForm()) {
-      return
+      return;
     }
 
     try {
-      await dispatch(loginUser({
-        email: formData.email,
-        password: formData.password
-      })).unwrap()
-      
+      await dispatch(
+        loginUser({
+          email: formData.email,
+          password: formData.password,
+        })
+      ).unwrap();
+
       // Navigation will be handled by the useEffect above
     } catch (error) {
       // Error is handled by Redux
-      console.error('Login failed:', error)
+      console.error("Login failed:", error);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-900">Sign in to your account</h2>
+        <h2 className="text-3xl font-bold text-gray-900">
+          Sign in to your account
+        </h2>
         <p className="mt-2 text-sm text-gray-600">
-          Or{' '}
+          Or{" "}
           <Link
             to="/register"
-            className="font-medium text-primary-600 hover:text-primary-500"
+            className="font-medium text-blue-600 hover:text-blue-500"
           >
             create a new account
           </Link>
@@ -105,7 +111,10 @@ const Login = () => {
         )}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700"
+          >
             Email address
           </label>
           <div className="mt-1 relative">
@@ -120,17 +129,26 @@ const Login = () => {
               required
               value={formData.email}
               onChange={handleChange}
-              className={`input pl-10 ${validationErrors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}`}
+              className={`input pl-10 ${
+                validationErrors.email
+                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                  : ""
+              }`}
               placeholder="Enter your email"
             />
           </div>
           {validationErrors.email && (
-            <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
+            <p className="mt-1 text-sm text-red-600">
+              {validationErrors.email}
+            </p>
           )}
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-gray-700"
+          >
             Password
           </label>
           <div className="mt-1 relative">
@@ -140,12 +158,16 @@ const Login = () => {
             <input
               id="password"
               name="password"
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               required
               value={formData.password}
               onChange={handleChange}
-              className={`input pl-10 pr-10 ${validationErrors.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}`}
+              className={`input pl-10 pr-10 ${
+                validationErrors.password
+                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                  : ""
+              }`}
               placeholder="Enter your password"
             />
             <button
@@ -161,7 +183,9 @@ const Login = () => {
             </button>
           </div>
           {validationErrors.password && (
-            <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
+            <p className="mt-1 text-sm text-red-600">
+              {validationErrors.password}
+            </p>
           )}
         </div>
 
@@ -173,13 +197,19 @@ const Login = () => {
               type="checkbox"
               className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
             />
-            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+            <label
+              htmlFor="remember-me"
+              className="ml-2 block text-sm text-gray-900"
+            >
               Remember me
             </label>
           </div>
 
           <div className="text-sm">
-            <a href="#" className="font-medium text-primary-600 hover:text-primary-500">
+            <a
+              href="#"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
               Forgot your password?
             </a>
           </div>
@@ -197,7 +227,7 @@ const Login = () => {
                 Signing in...
               </div>
             ) : (
-              'Sign in'
+              "Sign in"
             )}
           </button>
         </div>
@@ -215,12 +245,13 @@ const Login = () => {
 
         <div className="mt-4 text-center">
           <p className="text-sm text-gray-600">
-            Try the demo with: <strong>demo@cointactix.com</strong> / <strong>demo123</strong>
+            Try the demo with: <strong>demo@cointactix.com</strong> /{" "}
+            <strong>demo123</strong>
           </p>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

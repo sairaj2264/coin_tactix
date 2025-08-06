@@ -112,11 +112,11 @@ const Dashboard = () => {
                 key={tf.value}
                 onClick={() => setSelectedTimeframe(tf.value)}
                 className={`
-                  px-3 py-2 text-sm font-medium border
+                  px-3 py-2 text-sm font-medium border transition-all duration-200
                   ${
                     tf.value === selectedTimeframe
-                      ? "bg-primary-600 text-white border-primary-600"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
                   }
                   ${tf === timeframes[0] ? "rounded-l-md" : ""}
                   ${
