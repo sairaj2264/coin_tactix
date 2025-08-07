@@ -19,6 +19,14 @@ import {
   Legend,
   Filler,
 } from "chart.js";
+import {
+  EquityCurveChart,
+  ReturnsDistributionChart,
+  RiskReturnChart,
+  StrategyRadarChart,
+  AssetAllocationChart,
+} from "../components/Charts/AdvancedCharts";
+import { BacktestingEngine } from "../services/backtestingEngine";
 
 ChartJS.register(
   CategoryScale,
@@ -67,24 +75,88 @@ const BacktestingPage = () => {
 
     setIsRunning(true);
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/strategies/${selectedStrategy.id}/backtest`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(backtestParams),
-        }
+      // First try to get historical data
+      const dataResponse = await fetch(
+        `http://localhost:5000/api/market/ohlcv/${selectedStrategy.symbol}?timeframe=1d&limit=365`
       );
 
-      const data = await response.json();
-      setBacktestResults(data.backtest_results);
+      let historicalData = [];
+      if (dataResponse.ok) {
+        const dataResult = await dataResponse.json();
+        historicalData = dataResult.data || [];
+      }
+
+      // If no backend data, generate mock data for demonstration
+      if (historicalData.length === 0) {
+        historicalData = generateMockHistoricalData(selectedStrategy.symbol);
+      }
+
+      // Run optimized backtesting engine
+      const engine = new BacktestingEngine(
+        selectedStrategy,
+        historicalData,
+        backtestParams.initial_capital
+      );
+      const results = await engine.runBacktest();
+
+      // Format results for display
+      const formattedResults = {
+        ...results.metrics,
+        initial_capital: backtestParams.initial_capital,
+        final_value: results.portfolio.equity,
+        equity_curve: results.equityCurve,
+        trades: results.trades,
+        total_trades: results.metrics.totalTrades,
+        winning_trades: results.metrics.winningTrades,
+        win_rate: results.metrics.winRate,
+        max_drawdown: results.metrics.maxDrawdown,
+        sharpe_ratio: results.metrics.sharpeRatio,
+        total_return: results.metrics.totalReturn,
+        annual_return: results.metrics.annualReturn,
+        profit_factor: results.metrics.profitFactor,
+        duration_days: historicalData.length,
+        returns_distribution: results.metrics.returns,
+      };
+
+      setBacktestResults(formattedResults);
     } catch (error) {
       console.error("Error running backtest:", error);
+      alert("Error running backtest. Please try again.");
     } finally {
       setIsRunning(false);
     }
+  };
+
+  // Generate mock historical data for demonstration
+  const generateMockHistoricalData = (symbol) => {
+    const data = [];
+    const basePrice = symbol === "BTC" ? 45000 : symbol === "ETH" ? 3200 : 100;
+    let currentPrice = basePrice;
+
+    for (let i = 0; i < 365; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - (364 - i));
+
+      // Random walk with slight upward bias
+      const change = (Math.random() - 0.48) * 0.05; // Slight positive bias
+      currentPrice *= 1 + change;
+
+      const high = currentPrice * (1 + Math.random() * 0.03);
+      const low = currentPrice * (1 - Math.random() * 0.03);
+      const open = low + Math.random() * (high - low);
+      const close = low + Math.random() * (high - low);
+
+      data.push({
+        timestamp: date.toISOString(),
+        open: open,
+        high: high,
+        low: low,
+        close: close,
+        volume: Math.random() * 1000000 + 500000,
+      });
+    }
+
+    return data;
   };
 
   const handleParamChange = (param, value) => {
@@ -329,69 +401,66 @@ const BacktestingPage = () => {
                 </div>
               </div>
 
-              {/* Equity Curve Chart */}
-              {backtestResults.equity_curve &&
-                backtestResults.equity_curve.length > 0 && (
-                  <div className="card">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      Equity Curve
-                    </h3>
-                    <div className="h-80">
-                      <Line
-                        data={{
-                          labels: backtestResults.equity_curve.map((point) =>
-                            new Date(point.date).toLocaleDateString()
-                          ),
-                          datasets: [
-                            {
-                              label: "Portfolio Value",
-                              data: backtestResults.equity_curve.map(
-                                (point) => point.equity
-                              ),
-                              borderColor: "rgb(59, 130, 246)",
-                              backgroundColor: "rgba(59, 130, 246, 0.1)",
-                              tension: 0.1,
-                              fill: true,
-                            },
-                            {
-                              label: "Initial Capital",
-                              data: backtestResults.equity_curve.map(
-                                () => backtestResults.initial_capital
-                              ),
-                              borderColor: "rgb(156, 163, 175)",
-                              backgroundColor: "transparent",
-                              borderDash: [5, 5],
-                              tension: 0,
-                            },
-                          ],
-                        }}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: {
-                              position: "top",
-                            },
-                            title: {
-                              display: true,
-                              text: "Portfolio Performance Over Time",
-                            },
-                          },
-                          scales: {
-                            y: {
-                              beginAtZero: false,
-                              ticks: {
-                                callback: function (value) {
-                                  return formatCurrency(value);
-                                },
-                              },
-                            },
-                          },
-                        }}
+              {/* Advanced Charts Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Enhanced Equity Curve with Drawdown */}
+                {backtestResults.equity_curve &&
+                  backtestResults.equity_curve.length > 0 && (
+                    <div className="card">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Portfolio Performance & Drawdown
+                      </h3>
+                      <EquityCurveChart
+                        equityData={backtestResults.equity_curve}
+                        initialCapital={backtestResults.initial_capital}
                       />
                     </div>
-                  </div>
-                )}
+                  )}
+
+                {/* Returns Distribution */}
+                {backtestResults.returns_distribution &&
+                  backtestResults.returns_distribution.length > 0 && (
+                    <div className="card">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Returns Distribution
+                      </h3>
+                      <ReturnsDistributionChart
+                        returns={backtestResults.returns_distribution}
+                      />
+                    </div>
+                  )}
+
+                {/* Strategy Performance Radar */}
+                <div className="card">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Strategy Performance Metrics
+                  </h3>
+                  <StrategyRadarChart strategy={selectedStrategy} />
+                </div>
+
+                {/* Risk-Return Analysis */}
+                <div className="card">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Risk vs Return Analysis
+                  </h3>
+                  <RiskReturnChart
+                    strategies={[
+                      {
+                        name: selectedStrategy.name,
+                        volatility:
+                          Math.sqrt(
+                            backtestResults.returns_distribution?.reduce(
+                              (sum, ret) => sum + Math.pow(ret, 2),
+                              0
+                            ) / backtestResults.returns_distribution?.length ||
+                              1
+                          ) * Math.sqrt(252),
+                        annualReturn: backtestResults.annual_return,
+                      },
+                    ]}
+                  />
+                </div>
+              </div>
 
               {/* Trade Statistics */}
               <div className="card">

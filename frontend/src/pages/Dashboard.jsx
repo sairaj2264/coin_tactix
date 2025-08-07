@@ -268,8 +268,128 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Market Sentiment & Analytics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+        {/* Market Sentiment */}
+        <div className="card">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Market Sentiment
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Fear & Greed Index</span>
+              <div className="flex items-center">
+                <div className="w-20 h-2 bg-gray-200 rounded-full mr-3">
+                  <div className="w-3/5 h-2 bg-orange-500 rounded-full"></div>
+                </div>
+                <span className="text-sm font-medium text-orange-600">
+                  65 - Greed
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Social Sentiment</span>
+              <span className="text-sm font-medium text-green-600">
+                Positive (0.15)
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">News Sentiment</span>
+              <span className="text-sm font-medium text-green-600">
+                Bullish (0.3)
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Market Volatility</span>
+              <span className="text-sm font-medium text-yellow-600">
+                Medium
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Top Movers */}
+        <div className="card">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Top Movers (24h)
+          </h3>
+          <div className="space-y-3">
+            {[
+              { symbol: "SOL", change: 8.4, price: 103.05 },
+              { symbol: "ADA", change: 3.9, price: 0.52 },
+              { symbol: "DOT", change: 4.2, price: 26.06 },
+              { symbol: "LINK", change: -2.7, price: 14.6 },
+            ].map((coin, index) => (
+              <div key={index} className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                    <span className="text-xs font-bold text-blue-600">
+                      {coin.symbol}
+                    </span>
+                  </div>
+                  <span className="text-sm font-medium">{coin.symbol}</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium">${coin.price}</div>
+                  <div
+                    className={`text-xs ${
+                      coin.change >= 0 ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {coin.change >= 0 ? "+" : ""}
+                    {coin.change}%
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Technical Indicators */}
+        <div className="card">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Technical Indicators
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">RSI (14)</span>
+              <div className="flex items-center">
+                <div className="w-16 h-2 bg-gray-200 rounded-full mr-2">
+                  <div className="w-3/5 h-2 bg-yellow-500 rounded-full"></div>
+                </div>
+                <span className="text-sm font-medium text-yellow-600">
+                  58.4
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">MACD</span>
+              <span className="text-sm font-medium text-green-600">
+                Bullish
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Bollinger Bands</span>
+              <span className="text-sm font-medium text-blue-600">Middle</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Support</span>
+              <span className="text-sm font-medium">
+                ${formatPrice(realTimePrice * 0.95 || 108000)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Resistance</span>
+              <span className="text-sm font-medium">
+                ${formatPrice(realTimePrice * 1.05 || 120000)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Market Overview */}
-      <div className="card">
+      <div className="card mt-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
           Market Overview
         </h2>
