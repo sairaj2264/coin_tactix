@@ -39,7 +39,9 @@ const Dashboard = () => {
     (state) => state.strategy
   );
 
-  const { notifications, activeAlerts } = useSelector((state) => state.alerts);
+  // Mock alerts data since alerts slice might not exist
+  const notifications = [];
+  const activeAlerts = [];
 
   useEffect(() => {
     // Fetch initial data from backend

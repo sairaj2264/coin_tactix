@@ -1,96 +1,122 @@
-import React, { useState, useEffect } from 'react'
-import { 
-  Play, 
-  BarChart3, 
+import React, { useState, useEffect } from "react";
+import {
+  Play,
+  BarChart3,
   Download,
   TrendingUp,
   TrendingDown,
-  DollarSign
-} from 'lucide-react'
+  DollarSign,
+} from "lucide-react";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from "chart.js";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 const BacktestingPage = () => {
-  const [strategies, setStrategies] = useState([])
-  const [selectedStrategy, setSelectedStrategy] = useState(null)
+  const [strategies, setStrategies] = useState([]);
+  const [selectedStrategy, setSelectedStrategy] = useState(null);
   const [backtestParams, setBacktestParams] = useState({
-    start_date: '2023-01-01',
-    end_date: '2024-01-01',
-    initial_capital: 10000
-  })
-  const [backtestResults, setBacktestResults] = useState(null)
-  const [isRunning, setIsRunning] = useState(false)
-  const [loading, setLoading] = useState(true)
+    start_date: "2023-01-01",
+    end_date: "2024-01-01",
+    initial_capital: 10000,
+  });
+  const [backtestResults, setBacktestResults] = useState(null);
+  const [isRunning, setIsRunning] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStrategies()
-  }, [])
+    fetchStrategies();
+  }, []);
 
   const fetchStrategies = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/strategies/')
-      const data = await response.json()
-      setStrategies(data.strategies || [])
+      const response = await fetch("http://localhost:5000/api/strategies/");
+      const data = await response.json();
+      setStrategies(data.strategies || []);
       if (data.strategies && data.strategies.length > 0) {
-        setSelectedStrategy(data.strategies[0])
+        setSelectedStrategy(data.strategies[0]);
       }
     } catch (error) {
-      console.error('Error fetching strategies:', error)
+      console.error("Error fetching strategies:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const runBacktest = async () => {
-    if (!selectedStrategy) return
-    
-    setIsRunning(true)
+    if (!selectedStrategy) return;
+
+    setIsRunning(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/strategies/${selectedStrategy.id}/backtest`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(backtestParams)
-      })
-      
-      const data = await response.json()
-      setBacktestResults(data.backtest_results)
+      const response = await fetch(
+        `http://localhost:5000/api/strategies/${selectedStrategy.id}/backtest`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(backtestParams),
+        }
+      );
+
+      const data = await response.json();
+      setBacktestResults(data.backtest_results);
     } catch (error) {
-      console.error('Error running backtest:', error)
+      console.error("Error running backtest:", error);
     } finally {
-      setIsRunning(false)
+      setIsRunning(false);
     }
-  }
+  };
 
   const handleParamChange = (param, value) => {
-    setBacktestParams(prev => ({
+    setBacktestParams((prev) => ({
       ...prev,
-      [param]: value
-    }))
-  }
+      [param]: value,
+    }));
+  };
 
   const getPerformanceColor = (value) => {
-    if (value > 0) return 'text-green-600'
-    if (value < 0) return 'text-red-600'
-    return 'text-gray-600'
-  }
+    if (value > 0) return "text-green-600";
+    if (value < 0) return "text-red-600";
+    return "text-gray-600";
+  };
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(value)
-  }
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(value);
+  };
 
   const formatPercentage = (value) => {
-    return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`
-  }
+    return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -98,7 +124,9 @@ const BacktestingPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Strategy Backtesting</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Strategy Backtesting
+          </h1>
           <p className="mt-1 text-sm text-gray-500">
             Test your trading strategies against historical data
           </p>
@@ -135,24 +163,34 @@ const BacktestingPage = () => {
         <div className="lg:col-span-1 space-y-6">
           {/* Strategy Selection */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Strategy Selection</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Strategy Selection
+            </h3>
             <div className="space-y-3">
               {strategies.map((strategy) => (
                 <div
                   key={strategy.id}
                   className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                     selectedStrategy?.id === strategy.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300"
                   }`}
                   onClick={() => setSelectedStrategy(strategy)}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium text-gray-900">{strategy.name}</h4>
-                      <p className="text-sm text-gray-600">{strategy.symbol} • {strategy.type}</p>
+                      <h4 className="font-medium text-gray-900">
+                        {strategy.name}
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        {strategy.symbol} • {strategy.type}
+                      </p>
                     </div>
-                    <div className={`text-sm font-medium ${getPerformanceColor(strategy.performance.total_return)}`}>
+                    <div
+                      className={`text-sm font-medium ${getPerformanceColor(
+                        strategy.performance.total_return
+                      )}`}
+                    >
                       {formatPercentage(strategy.performance.total_return)}
                     </div>
                   </div>
@@ -163,7 +201,9 @@ const BacktestingPage = () => {
 
           {/* Backtest Parameters */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Backtest Parameters</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Backtest Parameters
+            </h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -172,7 +212,9 @@ const BacktestingPage = () => {
                 <input
                   type="date"
                   value={backtestParams.start_date}
-                  onChange={(e) => handleParamChange('start_date', e.target.value)}
+                  onChange={(e) =>
+                    handleParamChange("start_date", e.target.value)
+                  }
                   className="input"
                 />
               </div>
@@ -183,7 +225,9 @@ const BacktestingPage = () => {
                 <input
                   type="date"
                   value={backtestParams.end_date}
-                  onChange={(e) => handleParamChange('end_date', e.target.value)}
+                  onChange={(e) =>
+                    handleParamChange("end_date", e.target.value)
+                  }
                   className="input"
                 />
               </div>
@@ -194,7 +238,12 @@ const BacktestingPage = () => {
                 <input
                   type="number"
                   value={backtestParams.initial_capital}
-                  onChange={(e) => handleParamChange('initial_capital', parseFloat(e.target.value))}
+                  onChange={(e) =>
+                    handleParamChange(
+                      "initial_capital",
+                      parseFloat(e.target.value)
+                    )
+                  }
                   min="1000"
                   step="1000"
                   className="input"
@@ -206,23 +255,33 @@ const BacktestingPage = () => {
           {/* Strategy Details */}
           {selectedStrategy && (
             <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Strategy Details</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Strategy Details
+              </h3>
               <div className="space-y-3">
                 <div>
                   <span className="text-sm text-gray-600">Name:</span>
-                  <span className="ml-2 font-medium">{selectedStrategy.name}</span>
+                  <span className="ml-2 font-medium">
+                    {selectedStrategy.name}
+                  </span>
                 </div>
                 <div>
                   <span className="text-sm text-gray-600">Type:</span>
-                  <span className="ml-2 font-medium">{selectedStrategy.type}</span>
+                  <span className="ml-2 font-medium">
+                    {selectedStrategy.type}
+                  </span>
                 </div>
                 <div>
                   <span className="text-sm text-gray-600">Symbol:</span>
-                  <span className="ml-2 font-medium">{selectedStrategy.symbol}</span>
+                  <span className="ml-2 font-medium">
+                    {selectedStrategy.symbol}
+                  </span>
                 </div>
                 <div>
                   <span className="text-sm text-gray-600">Description:</span>
-                  <p className="mt-1 text-sm text-gray-700">{selectedStrategy.description}</p>
+                  <p className="mt-1 text-sm text-gray-700">
+                    {selectedStrategy.description}
+                  </p>
                 </div>
               </div>
             </div>
@@ -235,7 +294,9 @@ const BacktestingPage = () => {
             <>
               {/* Performance Metrics */}
               <div className="card">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Summary</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Performance Summary
+                </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <div className="text-2xl font-bold text-gray-900">
@@ -244,7 +305,11 @@ const BacktestingPage = () => {
                     <div className="text-sm text-gray-600">Final Capital</div>
                   </div>
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <div className={`text-2xl font-bold ${getPerformanceColor(backtestResults.total_return)}`}>
+                    <div
+                      className={`text-2xl font-bold ${getPerformanceColor(
+                        backtestResults.total_return
+                      )}`}
+                    >
                       {formatPercentage(backtestResults.total_return)}
                     </div>
                     <div className="text-sm text-gray-600">Total Return</div>
@@ -266,22 +331,32 @@ const BacktestingPage = () => {
 
               {/* Trade Statistics */}
               <div className="card">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Trade Statistics</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Trade Statistics
+                </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <div className="text-lg font-semibold text-gray-900">{backtestResults.total_trades}</div>
+                    <div className="text-lg font-semibold text-gray-900">
+                      {backtestResults.total_trades}
+                    </div>
                     <div className="text-sm text-gray-600">Total Trades</div>
                   </div>
                   <div>
-                    <div className="text-lg font-semibold text-green-600">{backtestResults.winning_trades}</div>
+                    <div className="text-lg font-semibold text-green-600">
+                      {backtestResults.winning_trades}
+                    </div>
                     <div className="text-sm text-gray-600">Winning Trades</div>
                   </div>
                   <div>
-                    <div className="text-lg font-semibold text-gray-900">{backtestResults.win_rate.toFixed(1)}%</div>
+                    <div className="text-lg font-semibold text-gray-900">
+                      {backtestResults.win_rate.toFixed(1)}%
+                    </div>
                     <div className="text-sm text-gray-600">Win Rate</div>
                   </div>
                   <div>
-                    <div className="text-lg font-semibold text-gray-900">{backtestResults.duration_days}</div>
+                    <div className="text-lg font-semibold text-gray-900">
+                      {backtestResults.duration_days}
+                    </div>
                     <div className="text-sm text-gray-600">Days</div>
                   </div>
                 </div>
@@ -291,7 +366,9 @@ const BacktestingPage = () => {
             <div className="card">
               <div className="text-center py-12">
                 <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Backtest Results</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No Backtest Results
+                </h3>
                 <p className="text-gray-600 mb-4">
                   Select a strategy and configure parameters to run a backtest
                 </p>
@@ -301,7 +378,7 @@ const BacktestingPage = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default BacktestingPage
+export default BacktestingPage;

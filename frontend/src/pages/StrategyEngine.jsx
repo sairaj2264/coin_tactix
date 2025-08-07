@@ -1,6 +1,6 @@
 import React from "react";
 import { Target, Plus, Settings, TrendingUp } from "lucide-react";
-import StrategyList from "../components/Strategy/StrategyList";
+import EnhancedStrategyList from "../components/Strategy/EnhancedStrategyList";
 import InvestmentPredictor from "../components/Strategy/InvestmentPredictor";
 
 const StrategyEngine = () => {
@@ -34,7 +34,7 @@ const StrategyEngine = () => {
             New Strategy
           </button>
         </div>
-        <StrategyList />
+        <EnhancedStrategyList />
       </div>
     </div>
   );

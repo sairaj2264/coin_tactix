@@ -22,6 +22,7 @@ import AuthLayout from "./components/Layout/AuthLayout";
 import Dashboard from "./pages/Dashboard";
 import StrategyEngine from "./pages/StrategyEngine";
 import BacktestingPage from "./pages/BacktestingPage";
+import Charts from "./pages/Charts";
 import Alerts from "./pages/Alerts";
 import PortfolioPage from "./pages/PortfolioPage";
 import Settings from "./pages/Settings";
@@ -130,6 +131,17 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <BacktestingPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/charts"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Charts />
               </Layout>
             </ProtectedRoute>
           }
