@@ -16,7 +16,8 @@ import {
   updateRealTimePrice,
 } from "../store/slices/marketSlice";
 import { fetchStrategies } from "../store/slices/strategySlice";
-import PriceChart from "../components/Charts/PriceChart";
+import React19Chart from "../components/Charts/React19Chart";
+import ErrorBoundary from "../components/ErrorBoundary";
 import MetricsCard from "../components/Dashboard/MetricsCard";
 import RecentAlerts from "../components/Dashboard/RecentAlerts";
 import StrategyPerformance from "../components/Dashboard/StrategyPerformance";
@@ -232,11 +233,17 @@ const Dashboard = () => {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
               </div>
             ) : (
-              <PriceChart
-                data={ohlcvData[currentSymbol] || []}
-                symbol={currentSymbol}
-                timeframe={selectedTimeframe}
-              />
+              <ErrorBoundary fallbackMessage="Chart failed to load. The dashboard will continue to work without the chart.">
+                <React19Chart
+                  data={
+                    ohlcvData && ohlcvData[currentSymbol]
+                      ? ohlcvData[currentSymbol]
+                      : []
+                  }
+                  symbol={currentSymbol}
+                  timeframe={selectedTimeframe}
+                />
+              </ErrorBoundary>
             )}
           </div>
         </div>
@@ -245,19 +252,17 @@ const Dashboard = () => {
         <div className="space-y-6">
           {/* Real-Time Data */}
           <RealTimeData symbol={currentSymbol} />
-
           {/* AI Prediction */}
           <AIPredictionCard symbol={currentSymbol} />
-
           {/* Recent Alerts */}
           <RecentAlerts
             alerts={activeAlerts.slice(0, 5)}
             notifications={notifications.slice(0, 3)}
           />
-
           {/* Strategy Performance */}
+          // After
           <StrategyPerformance
-            strategies={strategies.slice(0, 3)}
+            strategies={Array.isArray(strategies) ? strategies.slice(0, 3) : []}
             isLoading={strategyLoading}
           />
         </div>

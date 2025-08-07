@@ -329,6 +329,70 @@ const BacktestingPage = () => {
                 </div>
               </div>
 
+              {/* Equity Curve Chart */}
+              {backtestResults.equity_curve &&
+                backtestResults.equity_curve.length > 0 && (
+                  <div className="card">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Equity Curve
+                    </h3>
+                    <div className="h-80">
+                      <Line
+                        data={{
+                          labels: backtestResults.equity_curve.map((point) =>
+                            new Date(point.date).toLocaleDateString()
+                          ),
+                          datasets: [
+                            {
+                              label: "Portfolio Value",
+                              data: backtestResults.equity_curve.map(
+                                (point) => point.equity
+                              ),
+                              borderColor: "rgb(59, 130, 246)",
+                              backgroundColor: "rgba(59, 130, 246, 0.1)",
+                              tension: 0.1,
+                              fill: true,
+                            },
+                            {
+                              label: "Initial Capital",
+                              data: backtestResults.equity_curve.map(
+                                () => backtestResults.initial_capital
+                              ),
+                              borderColor: "rgb(156, 163, 175)",
+                              backgroundColor: "transparent",
+                              borderDash: [5, 5],
+                              tension: 0,
+                            },
+                          ],
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              position: "top",
+                            },
+                            title: {
+                              display: true,
+                              text: "Portfolio Performance Over Time",
+                            },
+                          },
+                          scales: {
+                            y: {
+                              beginAtZero: false,
+                              ticks: {
+                                callback: function (value) {
+                                  return formatCurrency(value);
+                                },
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
               {/* Trade Statistics */}
               <div className="card">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
