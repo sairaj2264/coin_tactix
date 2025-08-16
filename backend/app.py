@@ -23,7 +23,7 @@ def create_app():
     app.config['REDIS_URL'] = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
     
     # Initialize extensions
-    CORS(app, origins=["http://localhost:3000"])
+    CORS(app, origins=["http://localhost:3000", "http://localhost:5173"])
     
     # Initialize SocketIO
     socketio = SocketIO(
@@ -92,5 +92,5 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=5000,
         debug=True,
-        use_reloader=True
+        use_reloader=False
     )
