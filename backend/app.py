@@ -38,12 +38,14 @@ def create_app():
     from routes.alerts import alerts_bp
     from routes.auth import auth_bp
     from routes.portfolio import portfolio_bp
+    from routes.system import system_bp
     
     app.register_blueprint(market_bp, url_prefix='/api/market')
     app.register_blueprint(strategy_bp, url_prefix='/api/strategies')
     app.register_blueprint(alerts_bp, url_prefix='/api/alerts')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(portfolio_bp, url_prefix='/api/portfolio')
+    app.register_blueprint(system_bp, url_prefix='/api/system')
     
     # Initialize database
     from models import db
