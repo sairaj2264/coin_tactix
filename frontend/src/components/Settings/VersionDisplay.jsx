@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 const VersionDisplay = () => {
-  const [version, setVersion] = useState('');
+  const [version, setVersion] = useState("");
 
   const fetchVersion = async () => {
     try {
-      const response = await fetch('/api/system/version');
+      const response = await fetch("/api/system/version");
       const data = await response.json();
       setVersion(data.version);
     } catch (error) {
-      console.error('Error fetching version:', error);
-      setVersion('Error fetching version');
+      console.error("Error fetching version:", error);
+      setVersion("Error fetching version");
     }
   };
 
@@ -21,5 +21,6 @@ const VersionDisplay = () => {
     </div>
   );
 };
+//Just an addition to test the connection
 
 export default VersionDisplay;
