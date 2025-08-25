@@ -13,7 +13,7 @@ const VersionDisplay = () => {
       setVersion("Error fetching version");
     }
   };
-  //Another test commit for the hub
+  //Another test commit for the
   return (
     <div>
       <button onClick={fetchVersion}>Get Version</button>
