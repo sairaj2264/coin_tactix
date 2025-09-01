@@ -285,3 +285,7 @@ class MarketDataService:
         rs = gain / loss
         rsi = 100 - (100 / (1 + rs))
         return rsi
+
+
+
+#this uses machine learning ,
