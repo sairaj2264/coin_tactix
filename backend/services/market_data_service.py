@@ -288,4 +288,6 @@ class MarketDataService:
 
 
 
-#this uses machine learning ,
+#this uses machine learning ,# which is not implemented yet# import some_ml_library
+# def predict_price_movement(self, symbol):
+#     """Predict price movement using ML models (mock implementation)"""
