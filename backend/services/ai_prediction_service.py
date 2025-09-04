@@ -11,6 +11,27 @@ from sklearn.ensemble import RandomForestRegressor
 import joblib
 import os
 
+MODEL_PATHS = {
+    "BTC": os.getenv("BTC_MODEL_PATH", "models/BTC_model.joblib"),
+    "ETH": os.getenv("ETH_MODEL_PATH", "models/ETH_model.joblib"),
+}
+
+_models = {}
+
+def load_models():
+    global _models
+    for key, path in MODEL_PATHS.items():
+        if key not in _models:
+            _models[key] = joblib.load(path)
+
+def predict(symbol: str, features: list) -> float:
+    if not _models:
+        load_models()
+    model = _models.get(symbol)
+    if not model:
+        raise ValueError(f"Model for {symbol} not loaded.")
+    return model.predict([features])[0]
+
 class AIPredictionService:
     def __init__(self):
         self.models = {}
