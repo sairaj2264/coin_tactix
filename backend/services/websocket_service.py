@@ -18,7 +18,7 @@ import aiohttp
 
 # Global variables
 socketio_instance = None
-market_service = None
+_market_service = None
 price_update_thread = None
 connected_clients = set()
 
@@ -71,10 +71,10 @@ async def websocket_handler(request):
 
 def init_websocket(socketio: SocketIO, market_service: MarketDataService):
     """Initialize WebSocket service"""
-    global socketio_instance, market_service  
+    global socketio_instance, _market_service  
     socketio_instance = socketio
-    market_service = MarketDataService()
-    
+    _market_service = market_service
+
     # Register event handlers
     @socketio.on('connect')
     def handle_connect():
@@ -91,19 +91,16 @@ def init_websocket(socketio: SocketIO, market_service: MarketDataService):
             if not symbol:
                 return {'error': 'Symbol is required'}
 
-            price_data = await market_service.get_price_data(symbol)
-            socketio.emit('price_update', price_data)
+            price_data = await _market_service.get_price_data(symbol)
+            socketio_instance.emit('price_update', price_data)
         except Exception as e:
-            socketio.emit('error', {'message': str(e)})
+            socketio_instance.emit('error', {'message': str(e)})
 
-    @socketio.on('subscribe_alerts')
-    def handle_subscribe_alerts():
-        print("Client subscribed to alerts")
-        emit('subscription_status', {'type': 'alerts', 'status': 'subscribed'})
-    
-    # Start background tasks
-    start_price_updates()
-    start_market_updates()
+    @socketio.on('error')
+    def handle_error(error):
+        print(f"WebSocket error: {error}")
+
+    return socketio
 
 def start_price_updates():
     """Start background thread for price updates"""
