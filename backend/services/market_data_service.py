@@ -17,7 +17,8 @@ import logging
 from cachetools import TTLCache
 
 class MarketDataService:
-    def __init__(self):
+    def __init__(self, currency_service):
+        self.currency_service = currency_service
         self.coingecko_base_url = "https://api.coingecko.com/api/v3"
         self.session = requests.Session()
         self.logger = logging.getLogger(__name__)
@@ -32,7 +33,24 @@ class MarketDataService:
         if self.session:
             await self.session.close()
             
-    async def get_price_data(self, symbol: str) -> Dict:
+    async def get_price_data(self, symbol: str, currency: str = "INR") -> Dict:
+        usd_data = await self._fetch_price_data(symbol)
+        
+        if currency == "USD":
+            return usd_data
+            
+        # Convert prices to INR
+        conversion = await self.currency_service.convert_usd_to_inr(usd_data["price"])
+        
+        return {
+            **usd_data,
+            "price": conversion["INR"],
+            "currency": "INR",
+            "usd_price": usd_data["price"],
+            "conversion_rate": conversion["rate"]
+        }
+    
+    async def _fetch_price_data(self, symbol: str) -> Dict:
         cache_key = f"{symbol}_price"
         if cache_key in self.price_cache:
             return self.price_cache[cache_key]
