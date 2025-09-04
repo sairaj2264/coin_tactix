@@ -10,12 +10,55 @@ import numpy as np
 from datetime import datetime, timedelta
 from models import db, OHLCVData, TechnicalIndicators, OnChainMetrics, MarketSentiment
 # import talib  # Commented out for now - requires special installation
+from typing import Dict, List, Optional
+import aiohttp
+import asyncio
+import logging
+from cachetools import TTLCache
 
 class MarketDataService:
     def __init__(self):
         self.coingecko_base_url = "https://api.coingecko.com/api/v3"
         self.session = requests.Session()
+        self.logger = logging.getLogger(__name__)
+        self.price_cache = TTLCache(maxsize=100, ttl=60)  # 60 second cache
+        self.session: Optional[aiohttp.ClientSession] = None
         
+    async def initialize(self):
+        if not self.session:
+            self.session = aiohttp.ClientSession()
+            
+    async def close(self):
+        if self.session:
+            await self.session.close()
+            
+    async def get_price_data(self, symbol: str) -> Dict:
+        cache_key = f"{symbol}_price"
+        if cache_key in self.price_cache:
+            return self.price_cache[cache_key]
+            
+        try:
+            async with self.session.get(f"https://api.example.com/v1/prices/{symbol}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    self.price_cache[cache_key] = data
+                    return data
+                else:
+                    raise Exception(f"API returned status {response.status}")
+        except Exception as e:
+            self.logger.error(f"Failed to fetch price data: {str(e)}")
+            raise
+            
+    async def get_historical_data(
+        self, 
+        symbol: str, 
+        start_time: datetime,
+        end_time: datetime,
+        interval: str = "1h"
+    ) -> List[Dict]:
+        # Implementation for historical data
+        pass
+    
     def fetch_and_store_ohlcv(self, symbol, timeframe='1d', limit=100):
         """Fetch OHLCV data and store in database"""
         try:
