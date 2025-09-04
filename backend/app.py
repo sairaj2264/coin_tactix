@@ -7,7 +7,9 @@ import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO
+from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
+from config import Config
 
 # Load environment variables
 load_dotenv()
@@ -16,12 +18,18 @@ from services.currency_service import CurrencyService
 from services.market_data_service import MarketDataService
 from services.websocket_service import init_websocket
 
+db = SQLAlchemy()
+
 def create_app():
     """Application factory pattern"""
     app = Flask(__name__)
-    CORS(app)
+    app.config.from_object(Config)
     
-    # Configure SocketIO with explicit async mode
+    # Initialize extensions
+    CORS(app)
+    db.init_app(app)
+    
+    # Initialize SocketIO
     socketio = SocketIO(
         app,
         cors_allowed_origins="*",
@@ -54,10 +62,10 @@ def create_app():
     app.register_blueprint(portfolio_bp, url_prefix='/api/portfolio')
     app.register_blueprint(system_bp, url_prefix='/api/system')
     
-    # Initialize database
-    from models import db
-    db.init_app(app)
-    
+    # Create database tables
+    with app.app_context():
+        db.create_all()
+
     # Health check endpoint
     @app.route('/api/health')
     def health_check():
@@ -80,12 +88,6 @@ def create_app():
 
 if __name__ == '__main__':
     app, socketio = create_app()
-    
-    # Create tables
-    with app.app_context():
-        from models import db
-        db.create_all()
-        print("Database tables created successfully!")
     
     print("Starting CoinTactix Backend Server...")
     print("API available at: http://localhost:5000")

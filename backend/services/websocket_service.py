@@ -273,4 +273,25 @@ def send_news_update():
         if socketio_instance:
             socketio_instance.emit('news_update', news_data)
             
-    def
+    except Exception as e:
+        print(f"Error sending news update: {str(e)}")
+
+def send_strategy_update():
+    """Send trading strategy update"""
+    try:
+        strategies = [
+            {"name": "Bullish Breakout", "description": "Buy when price breaks above resistance"},
+            {"name": "Bearish Breakdown", "description": "Sell when price breaks below support"},
+            {"name": "Moving Average Crossover", "description": "Buy when short-term MA crosses above long-term MA"},
+            {"name": "RSI Divergence", "description": "Look for divergences between price and RSI"},
+            {"name": "MACD Histogram", "description": "Trade based on MACD histogram changes"}
+        ]
+        
+        strategy_data = random.choice(strategies)
+        strategy_data['timestamp'] = datetime.utcnow().isoformat()
+        
+        if socketio_instance:
+            socketio_instance.emit('strategy_update', strategy_data)
+            
+    except Exception as e:
+        print(f"Error sending strategy update: {str(e)}")
