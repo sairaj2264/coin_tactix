@@ -14,6 +14,7 @@ load_dotenv()
 
 from services.currency_service import CurrencyService
 from services.market_data_service import MarketDataService
+from services.websocket_service import init_websocket
 
 def create_app():
     """Application factory pattern"""
@@ -39,6 +40,9 @@ def create_app():
     currency_service = CurrencyService()
     market_service = MarketDataService(currency_service)
 
+    # Initialize WebSocket with services
+    init_websocket(socketio, market_service)
+
     # Import and register blueprints
     from routes.market import create_market_blueprint
     market_bp = create_market_blueprint(market_service)
@@ -59,10 +63,6 @@ def create_app():
     # Initialize database
     from models import db
     db.init_app(app)
-    
-    # Initialize real-time services
-    from services.websocket_service import init_websocket
-    init_websocket(socketio)
     
     # Health check endpoint
     @app.route('/api/health')

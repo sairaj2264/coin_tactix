@@ -7,7 +7,7 @@ import threading
 import time
 import random
 from datetime import datetime
-from flask_socketio import emit
+from flask_socketio import emit, SocketIO
 from services.market_data_service import MarketDataService
 import asyncio
 import json
@@ -69,7 +69,7 @@ async def websocket_handler(request):
     
     return ws
 
-def init_websocket(socketio):
+def init_websocket(socketio: SocketIO, market_service: MarketDataService):
     """Initialize WebSocket service"""
     global socketio_instance, market_service
     socketio_instance = socketio
@@ -78,27 +78,24 @@ def init_websocket(socketio):
     # Register event handlers
     @socketio.on('connect')
     def handle_connect():
-        print(f"Client connected: {request.sid if 'request' in globals() else 'unknown'}")
-        connected_clients.add(request.sid if 'request' in globals() else 'client')
-        emit('connection_status', {'status': 'connected', 'message': 'Connected to CoinTactix real-time data'})
-    
+        print('Client connected')
+
     @socketio.on('disconnect')
     def handle_disconnect():
-        print(f"Client disconnected: {request.sid if 'request' in globals() else 'unknown'}")
-        connected_clients.discard(request.sid if 'request' in globals() else 'client')
-    
+        print('Client disconnected')
+
     @socketio.on('subscribe_price')
-    def handle_subscribe_price(data):
-        symbol = data.get('symbol', 'BTC')
-        print(f"Client subscribed to {symbol} price updates")
-        emit('subscription_status', {'symbol': symbol, 'status': 'subscribed'})
-    
-    @socketio.on('unsubscribe_price')
-    def handle_unsubscribe_price(data):
-        symbol = data.get('symbol', 'BTC')
-        print(f"Client unsubscribed from {symbol} price updates")
-        emit('subscription_status', {'symbol': symbol, 'status': 'unsubscribed'})
-    
+    async def handle_price_subscription(data):
+        try:
+            symbol = data.get('symbol')
+            if not symbol:
+                return {'error': 'Symbol is required'}
+
+            price_data = await market_service.get_price_data(symbol)
+            socketio.emit('price_update', price_data)
+        except Exception as e:
+            socketio.emit('error', {'message': str(e)})
+
     @socketio.on('subscribe_alerts')
     def handle_subscribe_alerts():
         print("Client subscribed to alerts")
