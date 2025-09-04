@@ -9,12 +9,65 @@ import random
 from datetime import datetime
 from flask_socketio import emit
 from services.market_data_service import MarketDataService
+import asyncio
+import json
+import logging
+from typing import Dict, Set
+from aiohttp import web
+import aiohttp
 
 # Global variables
 socketio_instance = None
 market_service = None
 price_update_thread = None
 connected_clients = set()
+
+class WebSocketManager:
+    def __init__(self):
+        self.connections: Set[web.WebSocketResponse] = set()
+        self.logger = logging.getLogger(__name__)
+        
+    async def register(self, ws: web.WebSocketResponse):
+        self.connections.add(ws)
+        self.logger.info(f"New client connected. Total connections: {len(self.connections)}")
+        
+    async def unregister(self, ws: web.WebSocketResponse):
+        self.connections.remove(ws)
+        self.logger.info(f"Client disconnected. Total connections: {len(self.connections)}")
+        
+    async def broadcast(self, message: Dict):
+        if not self.connections:
+            return
+            
+        for ws in self.connections.copy():
+            try:
+                await ws.send_json(message)
+            except Exception as e:
+                self.logger.error(f"Failed to send message: {str(e)}")
+                await self.unregister(ws)
+
+ws_manager = WebSocketManager()
+
+async def websocket_handler(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+    await ws_manager.register(ws)
+    
+    try:
+        async for msg in ws:
+            if msg.type == aiohttp.WSMsgType.TEXT:
+                try:
+                    data = json.loads(msg.data)
+                    # Handle incoming messages
+                    await ws.send_json({"status": "received"})
+                except json.JSONDecodeError:
+                    await ws.send_json({"error": "Invalid JSON"})
+            elif msg.type == aiohttp.WSMsgType.ERROR:
+                ws_manager.logger.error(f"WebSocket error: {ws.exception()}")
+    finally:
+        await ws_manager.unregister(ws)
+    
+    return ws
 
 def init_websocket(socketio):
     """Initialize WebSocket service"""

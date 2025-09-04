@@ -10,6 +10,9 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.ensemble import RandomForestRegressor
 import joblib
 import os
+from typing import Dict, List, Optional, Union
+import logging
+from dataclasses import dataclass
 
 MODEL_PATHS = {
     "BTC": os.getenv("BTC_MODEL_PATH", "models/BTC_model.joblib"),
@@ -32,13 +35,38 @@ def predict(symbol: str, features: list) -> float:
         raise ValueError(f"Model for {symbol} not loaded.")
     return model.predict([features])[0]
 
+@dataclass
+class ModelInfo:
+    version: str
+    last_updated: datetime
+    accuracy: float
+
 class AIPredictionService:
     def __init__(self):
-        self.models = {}
-        self.scalers = {}
+        self._models: Dict[str, object] = {}
+        self._model_info: Dict[str, ModelInfo] = {}
+        self.logger = logging.getLogger(__name__)
         self.model_dir = 'models'
         os.makedirs(self.model_dir, exist_ok=True)
-        
+        self._load_models()
+    
+    def _load_models(self) -> None:
+        try:
+            model_paths = {
+                "BTC": "models/BTC_model.joblib",
+                "ETH": "models/ETH_model.joblib"
+            }
+            for symbol, path in model_paths.items():
+                self._models[symbol] = joblib.load(path)
+                self._model_info[symbol] = ModelInfo(
+                    version="1.0.0",
+                    last_updated=datetime.now(),
+                    accuracy=0.85  # Add actual model accuracy
+                )
+        except Exception as e:
+            self.logger.error(f"Model loading failed: {str(e)}")
+            raise
+
     def get_price_prediction(self, symbol, timeframe='1d'):
         """Get AI price prediction for a symbol"""
         try:
@@ -301,3 +329,21 @@ class AIPredictionService:
             'f1_score': 0.69,
             'last_updated': datetime.utcnow().isoformat()
         }
+    
+    def predict(self, symbol: str, features: List[float]) -> Dict[str, Union[float, str]]:
+        try:
+            if symbol not in self._models:
+                raise ValueError(f"No model available for {symbol}")
+            
+            prediction = self._models[symbol].predict([features])[0]
+            confidence = self._models[symbol].predict_proba([features])[0].max()
+            
+            return {
+                "prediction": float(prediction),
+                "confidence": float(confidence),
+                "model_version": self._model_info[symbol].version,
+                "timestamp": datetime.now().isoformat()
+            }
+        except Exception as e:
+            self.logger.error(f"Prediction failed for {symbol}: {str(e)}")
+            raise
