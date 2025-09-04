@@ -7,6 +7,7 @@ from flask import Blueprint, jsonify, request
 from datetime import datetime, timedelta
 from models import db, Strategy
 from services.ai_prediction_service import AIPredictionService
+from services.strategy_service import StrategyService, StrategyConfig
 import json
 import random
 
@@ -305,3 +306,26 @@ def get_prediction():
     except Exception as e:
         print(f"Error getting prediction: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@strategy_bp.route('/yearly', methods=['POST'])
+def create_yearly_strategy():
+    try:
+        data = request.json
+        config = StrategyConfig(**data['config'])
+        
+        strategy = await strategy_service.create_yearly_strategy(
+            symbol=data['symbol'],
+            config=config
+        )
+        
+        return jsonify(strategy), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@strategy_bp.route('/review/<strategy_id>', methods=['GET'])
+def get_strategy_review(strategy_id):
+    try:
+        review = await strategy_service.get_strategy_review(strategy_id)
+        return jsonify(review), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 404
