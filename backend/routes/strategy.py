@@ -8,11 +8,19 @@ from datetime import datetime, timedelta
 from models import db, Strategy
 from services.ai_prediction_service import AIPredictionService
 from services.strategy_service import StrategyService, StrategyConfig
+from functools import wraps
+import asyncio
 import json
 import random
 
 strategy_bp = Blueprint('strategy', __name__)
 ai_service = AIPredictionService()
+
+def async_route(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        return asyncio.run(f(*args, **kwargs))
+    return wrapped
 
 @strategy_bp.route('/', methods=['GET'])
 def get_strategies():
@@ -308,7 +316,8 @@ def get_prediction():
         return jsonify({'error': str(e)}), 500
 
 @strategy_bp.route('/yearly', methods=['POST'])
-def create_yearly_strategy():
+@async_route
+async def create_yearly_strategy():
     try:
         data = request.json
         config = StrategyConfig(**data['config'])
@@ -323,7 +332,8 @@ def create_yearly_strategy():
         return jsonify({'error': str(e)}), 400
 
 @strategy_bp.route('/review/<strategy_id>', methods=['GET'])
-def get_strategy_review(strategy_id):
+@async_route
+async def get_strategy_review(strategy_id):
     try:
         review = await strategy_service.get_strategy_review(strategy_id)
         return jsonify(review), 200
