@@ -7,9 +7,10 @@ import threading
 import time
 import random
 from datetime import datetime
-from flask_socketio import emit, SocketIO
+from flask_socketio import SocketIO, emit
 from services.market_data_service import MarketDataService
 import asyncio
+from functools import partial
 import json
 import logging
 from typing import Dict, Set
@@ -71,36 +72,47 @@ async def websocket_handler(request):
 
 def init_websocket(socketio: SocketIO, market_service: MarketDataService):
     """Initialize WebSocket service"""
-    global socketio_instance, _market_service  
+    global socketio_instance, _market_service
     socketio_instance = socketio
     _market_service = market_service
 
-    # Register event handlers
     @socketio.on('connect')
     def handle_connect():
-        print('Client connected')
+        global connected_clients
+        connected_clients.add(request.sid)
+        print(f'Client connected. Total clients: {len(connected_clients)}')
 
     @socketio.on('disconnect')
     def handle_disconnect():
-        print('Client disconnected')
+        global connected_clients
+        connected_clients.remove(request.sid)
+        print(f'Client disconnected. Total clients: {len(connected_clients)}')
 
     @socketio.on('subscribe_price')
-    async def handle_price_subscription(data):
+    def handle_price_subscription(data):
         try:
             symbol = data.get('symbol')
             if not symbol:
                 return {'error': 'Symbol is required'}
 
-            price_data = await _market_service.get_price_data(symbol)
-            socketio_instance.emit('price_update', price_data)
+            # Use background task for async operations
+            socketio.start_background_task(
+                target=partial(send_price_update, symbol)
+            )
         except Exception as e:
-            socketio_instance.emit('error', {'message': str(e)})
+            emit('error', {'message': str(e)})
 
-    @socketio.on('error')
-    def handle_error(error):
-        print(f"WebSocket error: {error}")
+    # Start background tasks
+    start_price_updates()
+    start_market_updates()
 
-    return socketio
+async def send_price_update(symbol):
+    """Background task to send price updates"""
+    try:
+        price_data = await _market_service.get_price_data(symbol)
+        socketio_instance.emit('price_update', price_data)
+    except Exception as e:
+        socketio_instance.emit('error', {'message': str(e)})
 
 def start_price_updates():
     """Start background thread for price updates"""
@@ -261,50 +273,4 @@ def send_news_update():
         if socketio_instance:
             socketio_instance.emit('news_update', news_data)
             
-    except Exception as e:
-        print(f"Error sending news update: {str(e)}")
-
-def send_strategy_update():
-    """Send strategy performance update"""
-    try:
-        strategies = ['DCA Bitcoin', 'Momentum Trading', 'Mean Reversion']
-        
-        strategy_data = {
-            'strategy_name': random.choice(strategies),
-            'performance_change': round(random.uniform(-2, 3), 2),
-            'message': f"Strategy performance updated: {random.choice(['outperforming', 'underperforming', 'meeting'])} expectations",
-            'timestamp': datetime.utcnow().isoformat()
-        }
-        
-        if socketio_instance:
-            socketio_instance.emit('strategy_update', strategy_data)
-            
-    except Exception as e:
-        print(f"Error sending strategy update: {str(e)}")
-
-def trigger_alert(alert_data):
-    """Trigger an alert to connected clients"""
-    try:
-        if socketio_instance:
-            socketio_instance.emit('alert_triggered', alert_data)
-            print(f"Alert triggered: {alert_data.get('message', 'Unknown alert')}")
-            
-    except Exception as e:
-        print(f"Error triggering alert: {str(e)}")
-
-def send_prediction_update(symbol, prediction_data):
-    """Send AI prediction update"""
-    try:
-        if socketio_instance:
-            socketio_instance.emit('prediction_update', {
-                'symbol': symbol,
-                'prediction': prediction_data,
-                'timestamp': datetime.utcnow().isoformat()
-            })
-            
-    except Exception as e:
-        print(f"Error sending prediction update: {str(e)}")
-
-def get_connected_clients_count():
-    """Get number of connected clients"""
-    return len(connected_clients)
+    def

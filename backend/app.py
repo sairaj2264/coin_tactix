@@ -19,31 +19,25 @@ from services.websocket_service import init_websocket
 def create_app():
     """Application factory pattern"""
     app = Flask(__name__)
+    CORS(app)
     
-    # Configuration
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///cointactix.db')
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['REDIS_URL'] = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
-    
-    # Initialize extensions
-    CORS(app, origins=["http://localhost:3000", "http://localhost:5173"])
-    
-    # Initialize SocketIO
+    # Configure SocketIO with explicit async mode
     socketio = SocketIO(
-        app, 
-        cors_allowed_origins=["http://localhost:3000"],
-        async_mode='eventlet'
+        app,
+        cors_allowed_origins="*",
+        async_mode='threading',  # Specify async mode
+        logger=True,
+        engineio_logger=True
     )
-    
+
     # Initialize services
     currency_service = CurrencyService()
     market_service = MarketDataService(currency_service)
 
-    # Initialize WebSocket with services
+    # Initialize WebSocket
     init_websocket(socketio, market_service)
 
-    # Import and register blueprints
+    # Register blueprints
     from routes.market import create_market_blueprint
     market_bp = create_market_blueprint(market_service)
     app.register_blueprint(market_bp, url_prefix='/api/market')
