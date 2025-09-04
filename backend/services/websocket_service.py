@@ -71,7 +71,7 @@ async def websocket_handler(request):
 
 def init_websocket(socketio: SocketIO, market_service: MarketDataService):
     """Initialize WebSocket service"""
-    global socketio_instance, market_service
+    global socketio_instance, market_service  
     socketio_instance = socketio
     market_service = MarketDataService()
     
