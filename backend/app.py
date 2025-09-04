@@ -12,6 +12,9 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+from services.currency_service import CurrencyService
+from services.market_data_service import MarketDataService
+
 def create_app():
     """Application factory pattern"""
     app = Flask(__name__)
@@ -32,15 +35,21 @@ def create_app():
         async_mode='eventlet'
     )
     
+    # Initialize services
+    currency_service = CurrencyService()
+    market_service = MarketDataService(currency_service)
+
     # Import and register blueprints
-    from routes.market import market_bp
+    from routes.market import create_market_blueprint
+    market_bp = create_market_blueprint(market_service)
+    app.register_blueprint(market_bp, url_prefix='/api/market')
+    
     from routes.strategy import strategy_bp
     from routes.alerts import alerts_bp
     from routes.auth import auth_bp
     from routes.portfolio import portfolio_bp
     from routes.system import system_bp
     
-    app.register_blueprint(market_bp, url_prefix='/api/market')
     app.register_blueprint(strategy_bp, url_prefix='/api/strategies')
     app.register_blueprint(alerts_bp, url_prefix='/api/alerts')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
