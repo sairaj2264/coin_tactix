@@ -1,6 +1,6 @@
 """
 CoinTactix Backend API
-Advanced Cryptocurrency Trading Intelligence Platform
+Advanced Cryptocurrency Trading Intelligence Platforms
 """
 
 import os
